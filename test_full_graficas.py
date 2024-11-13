@@ -29,6 +29,9 @@ uso_dispensador1_diesel = []
 uso_dispensador2_gasolina = []
 uso_dispensador2_diesel = []
 uso_dispensador3_diesel = []
+cola_dispensador1 = []
+cola_dispensador2 = []
+cola_dispensador3 = []
 contador_gasolina = 0  # Contador para controlar la proporción de llegada
 
 # Clase de la estación de servicio
@@ -134,13 +137,6 @@ class EstacionServicio:
                 else:
                     self.contador_dispensador3_diesel -= 1
 
-            # Registrar el estado actual en listas para la gráfica
-        uso_dispensador1_gasolina.append(self.contador_dispensador1_gasolina)
-        uso_dispensador1_diesel.append(self.contador_dispensador1_diesel)
-        uso_dispensador2_gasolina.append(self.contador_dispensador2_gasolina)
-        uso_dispensador2_diesel.append(self.contador_dispensador2_diesel)
-        uso_dispensador3_diesel.append(self.contador_dispensador3_diesel)
-
 def llegada_vehiculos(env, estacion):
     global contador_gasolina
     while True:
@@ -156,12 +152,26 @@ def llegada_vehiculos(env, estacion):
 
             env.process(estacion.atender_vehiculo(tipo_combustible))
 
-            # Guardar datos para las gráficas
-            tiempos.append(env.now)
-            niveles_gasolina.append(tanque_gasolina)
-            niveles_diesel.append(tanque_diesel)
-            vehiculos_gasolina.append(vehiculos_atendidos_gasolina)
-            vehiculos_diesel.append(vehiculos_atendidos_diesel)
+        yield env.timeout(1 / FACTOR_TIEMPO)
+
+def registrar_estadisticas(env, estacion):
+    while True:
+        tiempos.append(env.now)
+        niveles_gasolina.append(tanque_gasolina)
+        niveles_diesel.append(tanque_diesel)
+        vehiculos_gasolina.append(vehiculos_atendidos_gasolina)
+        vehiculos_diesel.append(vehiculos_atendidos_diesel)
+        
+        # Registrar tamaños de cola
+        cola_dispensador1.append(len(estacion.dispensador1.queue))
+        cola_dispensador2.append(len(estacion.dispensador2.queue))
+        cola_dispensador3.append(len(estacion.dispensador3.queue))
+
+        uso_dispensador1_gasolina.append(estacion.contador_dispensador1_gasolina)
+        uso_dispensador1_diesel.append(estacion.contador_dispensador1_diesel)
+        uso_dispensador2_gasolina.append(estacion.contador_dispensador2_gasolina)
+        uso_dispensador2_diesel.append(estacion.contador_dispensador2_diesel)
+        uso_dispensador3_diesel.append(estacion.contador_dispensador3_diesel)
 
         yield env.timeout(1 / FACTOR_TIEMPO)
 
@@ -169,6 +179,7 @@ def llegada_vehiculos(env, estacion):
 env = simpy.Environment()
 estacion = EstacionServicio(env)
 env.process(llegada_vehiculos(env, estacion))
+env.process(registrar_estadisticas(env, estacion))
 
 # Función para actualizar la animación de todas las gráficas en una sola ventana
 def actualizar_grafico(i):
@@ -177,6 +188,9 @@ def actualizar_grafico(i):
     ax3.clear()
     ax4.clear()
     ax5.clear()
+    ax6.clear()
+    ax7.clear()
+    ax8.clear()
 
     step = 10
     end_index = i * step
@@ -197,7 +211,7 @@ def actualizar_grafico(i):
     ax2.set_title("Vehículos Atendidos")
     ax2.legend(loc="upper right")
 
-    # Gráficas de uso de cada dispensador
+    # Gráficas de uso y cola del dispensador 1
     ax3.plot(tiempos[:end_index], uso_dispensador1_gasolina[:end_index], label="Gasolina")
     ax3.plot(tiempos[:end_index], uso_dispensador1_diesel[:end_index], label="Diésel")
     ax3.set_xlabel("Tiempo (s)")
@@ -205,21 +219,41 @@ def actualizar_grafico(i):
     ax3.set_title("Uso del Dispensador 1")
     ax3.legend(loc="upper right")
 
-    ax4.plot(tiempos[:end_index], uso_dispensador2_gasolina[:end_index], label="Gasolina")
-    ax4.plot(tiempos[:end_index], uso_dispensador2_diesel[:end_index], label="Diésel")
+    ax4.plot(tiempos[:end_index], cola_dispensador1[:end_index], label="En Cola")
     ax4.set_xlabel("Tiempo (s)")
-    ax4.set_ylabel("Vehículos en Dispensador 2")
-    ax4.set_title("Uso del Dispensador 2")
+    ax4.set_ylabel("Vehículos en Cola")
+    ax4.set_title("Cola del Dispensador 1")
     ax4.legend(loc="upper right")
 
-    ax5.plot(tiempos[:end_index], uso_dispensador3_diesel[:end_index], label="Diésel")
+    # Gráficas de uso y cola del dispensador 2
+    ax5.plot(tiempos[:end_index], uso_dispensador2_gasolina[:end_index], label="Gasolina")
+    ax5.plot(tiempos[:end_index], uso_dispensador2_diesel[:end_index], label="Diésel")
     ax5.set_xlabel("Tiempo (s)")
-    ax5.set_ylabel("Vehículos en Dispensador 3")
-    ax5.set_title("Uso del Dispensador 3")
+    ax5.set_ylabel("Vehículos en Dispensador 2")
+    ax5.set_title("Uso del Dispensador 2")
     ax5.legend(loc="upper right")
 
+    ax6.plot(tiempos[:end_index], cola_dispensador2[:end_index], label="En Cola")
+    ax6.set_xlabel("Tiempo (s)")
+    ax6.set_ylabel("Vehículos en Cola")
+    ax6.set_title("Cola del Dispensador 2")
+    ax6.legend(loc="upper right")
+
+    # Gráficas de uso y cola del dispensador 3
+    ax7.plot(tiempos[:end_index], uso_dispensador3_diesel[:end_index], label="Diésel")
+    ax7.set_xlabel("Tiempo (s)")
+    ax7.set_ylabel("Vehículos en Dispensador 3")
+    ax7.set_title("Uso del Dispensador 3")
+    ax7.legend(loc="upper right")
+
+    ax8.plot(tiempos[:end_index], cola_dispensador3[:end_index], label="En Cola")
+    ax8.set_xlabel("Tiempo (s)")
+    ax8.set_ylabel("Vehículos en Cola")
+    ax8.set_title("Cola del Dispensador 3")
+    ax8.legend(loc="upper right")
+
 # Configuración de gráficos en una sola ventana
-fig, (ax1, ax2, ax3, ax4, ax5) = plt.subplots(5, 1, figsize=(10, 15))
+fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6), (ax7, ax8)) = plt.subplots(4, 2, figsize=(14, 20))
 
 # Ejecutar la simulación
 env.run(until=43200 / FACTOR_TIEMPO)  # Ejecutar solo 12 horas
