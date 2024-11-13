@@ -8,7 +8,7 @@ TIEMPO_LLENADO_MIN = 20  # en segundos
 TIEMPO_LLENADO_MAX = 100
 CAPACIDAD_TANQUE_GASOLINA = 12000  # en galones
 CAPACIDAD_TANQUE_DIESEL = 12000
-UMBRAL_PEDIDO = 200  # Umbral para solicitar reabastecimiento
+UMBRAL_PEDIDO = 4000  # Umbral para solicitar reabastecimiento ajustado a 4000 galones
 TIEMPO_REABASTECIMIENTO_MIN = 1800  # Tiempo en segundos (media hora)
 TIEMPO_REABASTECIMIENTO_MAX = 3600  # Tiempo en segundos (una hora)
 LAMBDA_LLEGADAS = 0.2  # Tasa de llegada media (vehículos por segundo)
@@ -38,7 +38,7 @@ class EstacionServicio:
     def reabastecer_tanque_gasolina(self):
         global tanque_gasolina
         while True:
-            if tanque_gasolina <= UMBRAL_PEDIDO:
+            if tanque_gasolina <= UMBRAL_PEDIDO:  # Cambiado el umbral de reabastecimiento a 4000
                 tiempo_llegada = np.random.randint(TIEMPO_REABASTECIMIENTO_MIN, TIEMPO_REABASTECIMIENTO_MAX) / FACTOR_TIEMPO
                 yield self.env.timeout(tiempo_llegada)
                 tanque_gasolina = CAPACIDAD_TANQUE_GASOLINA
@@ -49,7 +49,7 @@ class EstacionServicio:
     def reabastecer_tanque_diesel(self):
         global tanque_diesel
         while True:
-            if tanque_diesel <= UMBRAL_PEDIDO:
+            if tanque_diesel <= UMBRAL_PEDIDO:  # Cambiado el umbral de reabastecimiento a 4000
                 tiempo_llegada = np.random.randint(TIEMPO_REABASTECIMIENTO_MIN, TIEMPO_REABASTECIMIENTO_MAX) / FACTOR_TIEMPO
                 yield self.env.timeout(tiempo_llegada)
                 tanque_diesel = CAPACIDAD_TANQUE_DIESEL
@@ -134,8 +134,7 @@ fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
 # Ejecutar la simulación y animación
 env.run(until=86400 / FACTOR_TIEMPO)  # Ejecutar la simulación rápida por 1 día en tiempo real
-print("Número de cuadros (frames):", len(tiempos))
-ani = animation.FuncAnimation(fig, actualizar_grafico, frames=len(tiempos), interval=10, repeat=False)
+ani = animation.FuncAnimation(fig, actualizar_grafico, frames=len(tiempos), interval=1, repeat=False)
 
 plt.tight_layout()
 plt.show()
